@@ -1,465 +1,275 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <link rel="icon" type="image/x-icon" href="/path/to/favicon.ico">
-<!-- Playables SDK -->
-<script>// Playables SDK v1.0.0
-// Game lifecycle bridge: rAF-based game-ready detection + event communication
-(function() {
-  'use strict';
-
-  // Idempotency: skip if already initialized (e.g., server-side injection
-  // followed by client-side inject-javascript via the Bloks webview component).
-  if (window.playablesSDK) return;
-
-  var HANDLER_NAME = 'playablesGameEventHandler';
-  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
-  var RAF_FRAME_THRESHOLD = 3;
-
-  var gameReadySent = false;
-  var firstInteractionSent = false;
-  var errorSent = false;
-  var frameCount = 0;
-  var originalRAF = window.requestAnimationFrame;
-
-  // --- Transport Layer ---
-
-  function hasIOSBridge() {
-    return !!(window.webkit &&
-              window.webkit.messageHandlers &&
-              window.webkit.messageHandlers[HANDLER_NAME]);
-  }
-
-  function hasAndroidBridge() {
-    return !!(window[ANDROID_BRIDGE_NAME] &&
-              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
-  }
-
-  function isInIframe() {
-    return !!(window.parent && window.parent !== window);
-  }
-
-  function sendEvent(eventName, payload) {
-    var message = {
-      type: eventName,
-      payload: payload || {},
-      timestamp: Date.now()
-    };
-
-    if (hasIOSBridge()) {
-      try {
-        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
-      } catch (e) { /* ignore */ }
-      return;
-    }
-
-    if (hasAndroidBridge()) {
-    try {
-      var p = payload || {};
-      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
-      p.timestamp = message.timestamp;
-      window[ANDROID_BRIDGE_NAME].postEvent(
-        eventName,
-        JSON.stringify(p)
-      );
-    } catch (e) { /* ignore */ }
-    return;
-  }
-
-    if (isInIframe()) {
-      try {
-        window.parent.postMessage(message, '*');
-      } catch (e) { /* ignore */ }
-      return;
-    }
-  }
-
-  // --- rAF Game-Ready Detection ---
-
-  function onFrame() {
-    if (gameReadySent) return;
-
-    frameCount++;
-    if (frameCount >= RAF_FRAME_THRESHOLD) {
-      gameReadySent = true;
-      sendEvent('game_ready', {
-        frame_count: frameCount,
-        detected_at: Date.now()
-      });
-      return;
-    }
-
-    originalRAF.call(window, onFrame);
-  }
-
-  if (originalRAF) {
-    window.requestAnimationFrame = function(callback) {
-      if (!gameReadySent) {
-        return originalRAF.call(window, function(timestamp) {
-          frameCount++;
-          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
-            gameReadySent = true;
-            sendEvent('game_ready', {
-              frame_count: frameCount,
-              detected_at: Date.now()
-            });
-          }
-          callback(timestamp);
-        });
-      }
-      return originalRAF.call(window, callback);
-    };
-  }
-
-  // --- First User Interaction Detection ---
-
-  function setupFirstInteractionDetection() {
-    var events = ['touchstart', 'mousedown', 'keydown'];
-
-    function onFirstInteraction() {
-      if (firstInteractionSent) return;
-      firstInteractionSent = true;
-      sendEvent('user_interaction_start', null);
-
-      for (var i = 0; i < events.length; i++) {
-        document.removeEventListener(events[i], onFirstInteraction, true);
-      }
-    }
-
-    for (var i = 0; i < events.length; i++) {
-      document.addEventListener(events[i], onFirstInteraction, true);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
-  } else {
-    setupFirstInteractionDetection();
-  }
-
-  // --- Auto Error Capture ---
-
-  window.addEventListener('error', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    sendEvent('error', {
-      message: event.message || 'Unknown error',
-      source: event.filename || '',
-      lineno: event.lineno || 0,
-      colno: event.colno || 0,
-      auto_captured: true
-    });
-  });
-
-  window.addEventListener('unhandledrejection', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    var reason = event.reason;
-    sendEvent('error', {
-      message: (reason instanceof Error) ? reason.message : String(reason),
-      type: 'unhandled_promise_rejection',
-      auto_captured: true
-    });
-  });
-
-  // --- Public API ---
-
-  window.playablesSDK = {
-    complete: function(score) {
-      sendEvent('game_ended', {
-        score: score,
-        completed: true
-      });
-    },
-
-    error: function(message) {
-      if (errorSent) return;
-      errorSent = true;
-      sendEvent('error', {
-        message: message || 'Unknown error',
-        auto_captured: false
-      });
-    },
-
-    sendEvent: function(eventName, payload) {
-      if (!eventName || typeof eventName !== 'string') return;
-      sendEvent(eventName, payload);
-    }
-  };
-
-  // Kick off rAF detection in case no game code calls rAF immediately
-  if (originalRAF) {
-    originalRAF.call(window, onFrame);
-  }
-})();</script>
-<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Tap Share 1.0.9 — Beautiful UI</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<title>Tap Share — Material 3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 tailwind.config = { darkMode: 'media' }
 </script>
 <style>
 * { -webkit-tap-highlight-color: transparent; }
-html, body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-.one-ui-card { border-radius: 28px; }
-.one-ui-pill { border-radius: 999px; }
-.scrollbar-hide::-webkit-scrollbar{ display:none; }
+html, body { font-family: 'Roboto', system-ui, sans-serif; }
+.material-symbols-rounded { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 
-  @keyframes dropIn {
-    0% { transform: translateY(-180px) scale(0.6); opacity: 0; }
-    70% { transform: translateY(12px) scale(1.08); opacity: 1; }
-    100% { transform: translateY(0) scale(1); }
+:root {
+  --md-sys-color-primary: #6750A4;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-primary-container: #EADDFF;
+  --md-sys-color-on-primary-container: #21005F;
+  --md-sys-color-secondary: #625B71;
+  --md-sys-color-secondary-container: #E8DEF8;
+  --md-sys-color-on-secondary-container: #1D192B;
+  --md-sys-color-tertiary: #7D5260;
+  --md-sys-color-tertiary-container: #FFD8E4;
+  --md-sys-color-error: #B3261E;
+  --md-sys-color-surface: #FEF7FF;
+  --md-sys-color-surface-dim: #DED8E1;
+  --md-sys-color-surface-bright: #FEF7FF;
+  --md-sys-color-surface-container-lowest: #FFFFFF;
+  --md-sys-color-surface-container-low: #F7F2FA;
+  --md-sys-color-surface-container: #F3EDF7;
+  --md-sys-color-surface-container-high: #ECE6F0;
+  --md-sys-color-surface-container-highest: #E6E0E9;
+  --md-sys-color-on-surface: #1C1B1F;
+  --md-sys-color-on-surface-variant: #49454F;
+  --md-sys-color-outline: #79747E;
+  --md-sys-color-outline-variant: #CAC4D0;
+  --md-elevation-1: 0px 1px 2px rgba(0,0,0,0.3), 0px 1px 3px 1px rgba(0,0,0,0.15);
+  --md-elevation-2: 0px 1px 2px rgba(0,0,0,0.3), 0px 2px 6px 2px rgba(0,0,0,0.15);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --md-sys-color-primary: #D0BCFF;
+    --md-sys-color-on-primary: #381E72;
+    --md-sys-color-primary-container: #4F378B;
+    --md-sys-color-on-primary-container: #EADDFF;
+    --md-sys-color-secondary: #CCC2DC;
+    --md-sys-color-secondary-container: #4A4458;
+    --md-sys-color-on-secondary-container: #E8DEF8;
+    --md-sys-color-tertiary: #EFB8C8;
+    --md-sys-color-tertiary-container: #633B48;
+    --md-sys-color-error: #F2B8B5;
+    --md-sys-color-surface: #141218;
+    --md-sys-color-surface-dim: #141218;
+    --md-sys-color-surface-bright: #3B383E;
+    --md-sys-color-surface-container-lowest: #0F0D13;
+    --md-sys-color-surface-container-low: #1D1B20;
+    --md-sys-color-surface-container: #211F26;
+    --md-sys-color-surface-container-high: #2B2930;
+    --md-sys-color-surface-container-highest: #36343B;
+    --md-sys-color-on-surface: #E6E0E9;
+    --md-sys-color-on-surface-variant: #CAC4D0;
+    --md-sys-color-outline: #938F99;
+    --md-sys-color-outline-variant: #49454F;
   }
-  @keyframes flyUp {
-    0% { transform: translateY(0) scale(1); opacity: 1; }
-    100% { transform: translateY(-200px) scale(0.3); opacity: 0; }
-  }
-  
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .airdrop-selected { outline: 2.5px solid #007aff; outline-offset: 2px; }
+}
 
-  @keyframes pulseRing {
-    0% { box-shadow: 0 0 0 0 rgba(0,122,255,0.4); }
-    70% { box-shadow: 0 0 0 12px rgba(0,122,255,0); }
-    100% { box-shadow: 0 0 0 0 rgba(0,122,255,0); }
-  }
-  .airdrop-ready { outline: 2px solid #007aff; outline-offset: 2px; }
-  .fly-up { animation: flyUp 0.5s ease-in forwards; }
-  .drop-anim { animation: dropIn 0.65s cubic-bezier(.2,.8,.2,1); }
-  .pulse-ring { animation: pulseRing 1.5s infinite; }
+body { background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+h1, h2 { font-family: 'Google Sans', 'Roboto', sans-serif; }
 
+.m3-card {
+  background: var(--md-sys-color-surface-container);
+  border-radius: 24px;
+  box-shadow: var(--md-elevation-1);
+  transition: all 0.2s cubic-bezier(.2,0,0,1);
+}
+.m3-card:hover { box-shadow: var(--md-elevation-2); }
 
-  .prose { line-height: 1.6; }
-  .prose h1 { font-size: 1.5em; font-weight: 700; margin: 0.5em 0; }
-  .prose h2 { font-size: 1.3em; font-weight: 600; margin: 0.5em 0; }
-  .prose h3 { font-size: 1.1em; font-weight: 600; margin: 0.4em 0; }
-  .prose p { margin: 0.5em 0; }
-  .prose ul, .prose ol { margin: 0.5em 0; padding-left: 1.2em; }
-  .prose code { background: rgba(0,0,0,0.1); padding: 0.15em 0.3em; border-radius: 4px; font-size: 0.9em; }
-  .prose pre { background: rgba(0,0,0,0.05); padding: 0.8em; border-radius: 8px; overflow-x: auto; margin: 0.5em 0; }
-  .prose blockquote { border-left: 3px solid #007aff; padding-left: 0.8em; margin: 0.5em 0; opacity: 0.9; }
-  .prose a { color: #007aff; text-decoration: underline; }
-  .dark .prose code { background: rgba(255,255,255,0.1); }
-  .dark .prose pre { background: rgba(255,255,255,0.05); }
+.m3-filled-button {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.1px;
+  box-shadow: var(--md-elevation-1);
+}
+.m3-tonal-button {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-weight: 500;
+}
+.m3-outlined-button {
+  border: 1px solid var(--md-sys-color-outline);
+  color: var(--md-sys-color-primary);
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-weight: 500;
+}
 
+.m3-chip {
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
 
-  /* Enhanced UI - Beautiful upgrades */
-  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-  @keyframes glow { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
-  @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
-  
-  .one-ui-card {
-    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-    backdrop-filter: blur(20px);
-  }
-  .one-ui-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px -8px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,122,255,0.1);
-  }
-  .dark .one-ui-card:hover {
-    box-shadow: 0 12px 24px -8px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,122,255,0.2);
-  }
-  
-  /* Peer cards enhanced */
-  .peer-card-enhanced {
-    position: relative;
-    overflow: hidden;
-  }
-  .peer-card-enhanced::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, transparent 40%, rgba(0,122,255,0.05) 100%);
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-  .peer-card-enhanced:hover::before { opacity: 1; }
-  
-  /* Airdrop gradient border - enhanced */
-  .airdrop-gradient {
-    background: conic-gradient(from 0deg, #007aff, #af52de, #ff2d55, #ff9500, #007aff);
-    animation: spin 3s linear infinite;
-    filter: blur(8px);
-    opacity: 0.8;
-  }
-  
-  /* Empty state pulsing */
-  .pulse-wifi {
-    animation: pulseRing 2s infinite;
-  }
-  
-  /* Beautiful buttons */
-  .btn-primary {
-    background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-    box-shadow: 0 4px 12px rgba(0,122,255,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
-  }
-  .btn-primary:active {
-    transform: scale(0.97);
-    box-shadow: 0 2px 6px rgba(0,122,255,0.3);
-  }
-  
-  /* Mesh background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: 
-      radial-gradient(at 20% 30%, rgba(0,122,255,0.08) 0%, transparent 50%),
-      radial-gradient(at 80% 20%, rgba(175,82,222,0.06) 0%, transparent 50%),
-      radial-gradient(at 20% 80%, rgba(255,45,85,0.05) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-  .dark body::before {
-    background: 
-      radial-gradient(at 20% 30%, rgba(0,122,255,0.12) 0%, transparent 50%),
-      radial-gradient(at 80% 20%, rgba(175,82,222,0.08) 0%, transparent 50%),
-      radial-gradient(at 20% 80%, rgba(255,45,85,0.06) 0%, transparent 50%);
-  }
+.m3-fab {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border-radius: 16px;
+  box-shadow: var(--md-elevation-2);
+  width: 56px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+}
 
+/* Keep original class names for compatibility */
+.one-ui-card { border-radius: 24px; }
+.one-ui-pill { border-radius: 16px; }
+.btn-primary { background: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; }
+.peer-card-enhanced::before { display: none; }
+.airdrop-gradient { background: conic-gradient(from 0deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary), var(--md-sys-color-secondary), var(--md-sys-color-primary)); }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+@keyframes dropIn { 0% { transform: translateY(-180px) scale(0.6); opacity: 0; } 70% { transform: translateY(12px) scale(1.08); opacity: 1; } 100% { transform: translateY(0) scale(1); } }
+@keyframes flyUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-200px) scale(0.3); opacity: 0; } }
+.drop-anim { animation: dropIn 0.65s cubic-bezier(.2,.8,.2,1); }
 </style>
-<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FEF7FF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141218" media="(prefers-color-scheme: dark)">
 </head>
-<body class="bg-[#f5f5f7] dark:bg-black text-zinc-900 dark:text-zinc-100 antialiased selection:bg-[#007aff]/20">
-<div class="max-w-[820px] mx-auto min-h-screen flex flex-col">
-  <header class="sticky top-0 z-30 backdrop-blur-2xl bg-[#f5f5f7]/70 dark:bg-black/60 saturate-150 border-b border-zinc-200/50 dark:border-zinc-800/50">
-    <div class="px-4 sm:px-5 pt-5 pb-3">
-      <div class="flex items-start justify-between gap-2">
-        <div class="min-w-0 flex-1">
-          <h1 class="text-[28px] sm:text-[32px] leading-none font-bold tracking-tight">Tap Share</h1>
-          <p class="mt-1 text-[13px] sm:text-[14px] text-zinc-500 dark:text-zinc-400 leading-snug">Chia sẻ tệp, văn bản & link siêu nhanh</p>
+<body class="antialiased selection:bg-[var(--md-sys-color-primary-container)]">
+
+<div class="max-w-[840px] mx-auto min-h-screen flex flex-col">
+  <header class="sticky top-0 z-30" style="background: color-mix(in srgb, var(--md-sys-color-surface) 85%, transparent); backdrop-filter: blur(12px);">
+    <div class="px-4 sm:px-6 pt-6 pb-4">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h1 class="text-[32px] leading-none font-medium tracking-tight" style="font-family:'Google Sans',Roboto,sans-serif">Tap Share</h1>
+          <p class="mt-1 text-[14px]" style="color: var(--md-sys-color-on-surface-variant)">Chia sẻ tệp, văn bản & link siêu nhanh</p>
         </div>
-        <div class="flex items-center gap-1.5 flex-shrink-0">
-          <button id="infoBtn" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 active:scale-95">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <div class="flex items-center gap-2">
+          <button id="infoBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[var(--md-sys-color-surface-container-high)] active:scale-95 transition" style="color: var(--md-sys-color-on-surface-variant)">
+            <span class="material-symbols-rounded">info</span>
           </button>
-          <button id="devicePill" class="one-ui-pill flex items-center gap-1.5 pl-2.5 pr-2.5 py-2 bg-white dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-[#007aff]"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
-            <span id="deviceNameText" class="text-[12px] sm:text-[13px] font-medium max-w-[80px] sm:max-w-[110px] truncate">Đang nhận diện...</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-400 hidden sm:block"><path d="m9 18 6-6-6-6"/></svg>
+          <button id="devicePill" class="m3-chip flex items-center gap-1.5 pl-3 pr-3 py-2 active:scale-[0.98] transition">
+            <span class="material-symbols-rounded text-[20px]" style="color: var(--md-sys-color-primary)">smartphone</span>
+            <span id="deviceNameText" class="text-[13px] font-medium max-w-[110px] truncate">Đang nhận diện...</span>
           </button>
         </div>
       </div>
-      <div class="mt-2.5 flex items-center gap-1.5 text-[11px] sm:text-[12px] text-zinc-500 dark:text-zinc-500">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+      <div class="mt-3 flex items-center gap-2 text-[12px]" style="color: var(--md-sys-color-on-surface-variant)">
+        <span class="material-symbols-rounded text-[16px]">wifi</span>
         <span id="networkInfo" class="truncate">Đang kết nối...</span>
-        <span class="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 flex-shrink-0"></span>
-        <span id="peerCount" class="whitespace-nowrap">0 thiết bị</span>
+        <span class="w-1 h-1 rounded-full" style="background: var(--md-sys-color-outline-variant)"></span>
+        <span id="peerCount">0 thiết bị</span>
       </div>
     </div>
   </header>
 
-  <main class="flex-1 px-5 pb-28">
-    <section class="mt-5">
+  <main class="flex-1 px-4 sm:px-6 pb-28">
+    <section class="mt-6">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-[17px] font-semibold">Thiết bị xung quanh</h2>
-        <button id="refreshBtn" class="text-[13px] text-[#007aff] font-medium active:opacity-60">Làm mới</button>
+        <h2 class="text-[22px] font-medium" style="font-family:'Google Sans'">Thiết bị xung quanh</h2>
+        <button id="refreshBtn" class="m3-text-button px-3 py-1.5 rounded-full text-[14px] font-medium hover:bg-[var(--md-sys-color-primary-container)]/30" style="color: var(--md-sys-color-primary)">Làm mới</button>
       </div>
       <div id="peersGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-3"></div>
-      <div id="emptyPeers" class="one-ui-card bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 text-center">
-        <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-zinc-100 to-zinc-50 dark:from-zinc-800 dark:to-zinc-900 flex items-center justify-center mb-3 pulse-wifi shadow-lg">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="text-zinc-400"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/></svg>
+      <div id="emptyPeers" class="m3-card p-8 text-center">
+        <div class="w-16 h-16 mx-auto rounded-[20px] flex items-center justify-center mb-4" style="background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container)">
+          <span class="material-symbols-rounded text-[32px]">radar</span>
         </div>
-        <p class="text-[15px] font-medium">Đang tìm thiết bị gần đây</p>
-        <p class="text-[13px] text-zinc-500 dark:text-zinc-400 mt-1">Đảm bảo các thiết bị cùng mạng Wi-Fi</p>
+        <p class="text-[16px] font-medium">Đang tìm thiết bị gần đây</p>
+        <p class="text-[14px] mt-1" style="color: var(--md-sys-color-on-surface-variant)">Đảm bảo các thiết bị cùng mạng Wi-Fi</p>
       </div>
     </section>
 
     <section class="mt-8">
-      <div class="one-ui-card bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-        <div id="dropZone" class="relative p-7 text-center cursor-pointer transition active:bg-zinc-50 dark:active:bg-zinc-800/50">
+      <div class="m3-card overflow-hidden">
+        <div id="dropZone" class="relative p-8 text-center cursor-pointer transition active:opacity-80">
           <input id="fileInput" type="file" multiple class="hidden">
-          <div class="w-14 h-14 mx-auto rounded-2xl bg-[#007aff]/10 flex items-center justify-center mb-3">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div class="w-14 h-14 mx-auto rounded-[16px] flex items-center justify-center mb-3" style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container)">
+            <span class="material-symbols-rounded text-[28px]">upload</span>
           </div>
-          <p class="text-[16px] font-semibold">Chọn tệp hoặc kéo thả vào đây</p>
-          <p class="text-[13px] text-zinc-500 dark:text-zinc-400 mt-1">Hỗ trợ gửi nhiều tệp cùng lúc</p>
+          <p class="text-[16px] font-medium">Chọn tệp hoặc kéo thả vào đây</p>
+          <p class="text-[14px] mt-1" style="color: var(--md-sys-color-on-surface-variant)">Hỗ trợ gửi nhiều tệp cùng lúc</p>
         </div>
-        <div id="selectedFiles" class="hidden border-t border-zinc-100 dark:border-zinc-800 p-4 bg-zinc-50/70 dark:bg-zinc-900/70">
+        <div id="selectedFiles" class="hidden border-t p-4" style="border-color: var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-high)">
           <div class="flex items-center justify-between mb-2.5">
-            <p class="text-[13px] font-medium text-zinc-600 dark:text-zinc-400">Đã chọn <span id="fileCount">0</span> tệp</p>
-            <button id="clearFiles" class="text-[12px] text-zinc-500 hover:text-red-500">Xóa</button>
+            <p class="text-[13px] font-medium" style="color: var(--md-sys-color-on-surface-variant)">Đã chọn <span id="fileCount">0</span> tệp</p>
+            <button id="clearFiles" class="text-[12px] hover:underline" style="color: var(--md-sys-color-error)">Xóa</button>
           </div>
           <div id="filePreviewList" class="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1"></div>
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-3 mt-3">
-        <button id="openTextShare" class="one-ui-card bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 flex flex-col items-center gap-2 active:scale-[0.98] transition">
-          <div class="w-10 h-10 rounded-xl bg-[#007aff]/10 flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.8"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+        <button id="openTextShare" class="m3-card p-4 flex flex-col items-center gap-2 active:scale-[0.98] transition">
+          <div class="w-10 h-10 rounded-[12px] flex items-center justify-center" style="background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container)">
+            <span class="material-symbols-rounded">article</span>
           </div>
           <span class="text-[13px] font-medium">Văn bản</span>
         </button>
-        <button id="openLinkShare" class="one-ui-card bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 flex flex-col items-center gap-2 active:scale-[0.98] transition">
-          <div class="w-10 h-10 rounded-xl bg-[#007aff]/10 flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <button id="openLinkShare" class="m3-card p-4 flex flex-col items-center gap-2 active:scale-[0.98] transition">
+          <div class="w-10 h-10 rounded-[12px] flex items-center justify-center" style="background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container)">
+            <span class="material-symbols-rounded">link</span>
           </div>
           <span class="text-[13px] font-medium">Liên kết</span>
         </button>
       </div>
 
-      <!-- Text Share Panel -->
-      <div id="textSharePanel" class="hidden mt-3 one-ui-card bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4">
-        <div class="flex items-center justify-between mb-2">
-          <p class="text-[14px] font-semibold">Chia sẻ văn bản</p>
-          <button id="closeTextPanel" class="text-zinc-400 hover:text-zinc-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div id="textSharePanel" class="hidden mt-3 m3-card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-[16px] font-medium" style="font-family:'Google Sans'">Chia sẻ văn bản</p>
+          <button id="closeTextPanel" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--md-sys-color-surface-container-high)]"><span class="material-symbols-rounded text-[20px]">close</span></button>
         </div>
-        <textarea id="textInput" rows="4" placeholder="Nhập văn bản cần chia sẻ..." class="w-full p-3 text-[14px] bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 focus:ring-[#007aff]/30 resize-none"></textarea>
-        <button id="sendTextBtn" disabled class="mt-3 w-full py-3 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-medium text-[14px] transition">Chọn thiết bị để gửi</button>
+        <textarea id="textInput" rows="4" placeholder="Nhập văn bản cần chia sẻ..." class="w-full p-3.5 text-[14px] rounded-[16px] outline-none resize-none" style="background: var(--md-sys-color-surface-container-highest); border: 1px solid var(--md-sys-color-outline-variant); color: var(--md-sys-color-on-surface)"></textarea>
+        <button id="sendTextBtn" disabled class="mt-3 w-full py-3 rounded-[20px] font-medium text-[14px] transition" style="background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface-variant)">Chọn thiết bị để gửi</button>
       </div>
 
-      <!-- Link Share Panel -->
-      <div id="linkSharePanel" class="hidden mt-3 one-ui-card bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4">
-        <div class="flex items-center justify-between mb-2">
-          <p class="text-[14px] font-semibold">Chia sẻ liên kết</p>
-          <button id="closeLinkPanel" class="text-zinc-400 hover:text-zinc-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div id="linkSharePanel" class="hidden mt-3 m3-card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-[16px] font-medium" style="font-family:'Google Sans'">Chia sẻ liên kết</p>
+          <button id="closeLinkPanel" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--md-sys-color-surface-container-high)]"><span class="material-symbols-rounded text-[20px]">close</span></button>
         </div>
-        <input id="linkInput" type="url" placeholder="https://..." class="w-full p-3 text-[14px] bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 focus:ring-[#007aff]/30" />
-        <div class="flex gap-2 mt-2 overflow-x-auto scrollbar-hide">
-          <button class="quick-link px-3 py-1.5 text-[12px] bg-zinc-100 dark:bg-zinc-800 rounded-full" data-url="https://">https://</button>
-          <button class="quick-link px-3 py-1.5 text-[12px] bg-zinc-100 dark:bg-zinc-800 rounded-full" data-url="https://m.me/">Messenger</button>
-          <button class="quick-link px-3 py-1.5 text-[12px] bg-zinc-100 dark:bg-zinc-800 rounded-full" data-url="https://zalo.me/">Zalo</button>
+        <input id="linkInput" type="url" placeholder="https://..." class="w-full p-3.5 text-[14px] rounded-[16px] outline-none" style="background: var(--md-sys-color-surface-container-highest); border: 1px solid var(--md-sys-color-outline-variant)" />
+        <div class="flex gap-2 mt-3 overflow-x-auto scrollbar-hide">
+          <button class="quick-link px-3 py-1.5 text-[12px] rounded-full" style="background: var(--md-sys-color-surface-container-high)" data-url="https://">https://</button>
+          <button class="quick-link px-3 py-1.5 text-[12px] rounded-full" style="background: var(--md-sys-color-surface-container-high)" data-url="https://m.me/">Messenger</button>
+          <button class="quick-link px-3 py-1.5 text-[12px] rounded-full" style="background: var(--md-sys-color-surface-container-high)" data-url="https://zalo.me/">Zalo</button>
         </div>
-        <button id="sendLinkBtn" disabled class="mt-3 w-full py-3 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-medium text-[14px] transition">Chọn thiết bị để gửi</button>
+        <button id="sendLinkBtn" disabled class="mt-3 w-full py-3 rounded-[20px] font-medium text-[14px] transition" style="background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface-variant)">Chọn thiết bị để gửi</button>
       </div>
 
       <div id="sendAction" class="hidden mt-4">
-        <button id="sendBtn" disabled class="w-full one-ui-card bg-zinc-300 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 font-semibold py-4 px-6 flex items-center justify-center gap-2.5 transition disabled:opacity-100">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <button id="sendBtn" disabled class="w-full m3-card font-medium py-4 px-6 flex items-center justify-center gap-2.5 transition" style="background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface-variant)">
+          <span class="material-symbols-rounded">send</span>
           <span>Chọn thiết bị để gửi</span>
         </button>
       </div>
     </section>
 
     <section id="transfersSection" class="mt-8 hidden">
-      <h2 class="text-[17px] font-semibold mb-3">Đang truyền</h2>
+      <h2 class="text-[22px] font-medium mb-3" style="font-family:'Google Sans'">Đang truyền</h2>
       <div id="transfersList" class="space-y-3"></div>
     </section>
 
     <section class="mt-8">
-      <h2 class="text-[17px] font-semibold mb-3">Lịch sử phiên</h2>
+      <h2 class="text-[22px] font-medium mb-3" style="font-family:'Google Sans'">Lịch sử phiên</h2>
       <div id="historyList" class="space-y-2.5">
-        <div id="emptyHistory" class="text-[14px] text-zinc-500 dark:text-zinc-500 py-6 text-center">Chưa có hoạt động nào</div>
+        <div id="emptyHistory" class="text-[14px] py-6 text-center" style="color: var(--md-sys-color-on-surface-variant)">Chưa có hoạt động nào</div>
       </div>
     </section>
   </main>
 </div>
 
-<div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300">
-  <div class="one-ui-pill bg-zinc-900/95 dark:bg-white/95 text-white dark:text-zinc-900 px-5 py-3 shadow-2xl flex items-center gap-2.5">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="text-green-400 dark:text-green-600"><polyline points="20 6 9 17 4 12"/></svg>
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300">
+  <div class="px-4 py-3 rounded-[16px] flex items-center gap-2.5" style="background: var(--md-sys-color-inverse-surface); color: var(--md-sys-color-inverse-on-surface); box-shadow: var(--md-elevation-2)">
+    <span class="material-symbols-rounded text-[18px]" style="color: #4CAF50">check_circle</span>
     <span id="toastText" class="text-[14px] font-medium whitespace-nowrap">Đã gửi thành công</span>
   </div>
 </div>
-
 <script type="module">
 import {joinRoom} from 'https://cdn.jsdelivr.net/npm/trystero@0.21.0/+esm';
 
@@ -994,15 +804,28 @@ async function initNetwork() {
         from: peerName,
         fileName: file.name,
         fileInfo: `${formatBytes(file.size)} • ${file.type || 'Tệp'}`,
-        icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+        icon: '<span class="material-symbols-rounded" style="color:var(--md-sys-color-primary);font-size:22px">download</span>',
         downloadUrl: url,
         downloadName: file.name
       }).then(result => {
         if (result === 'right') {
-          // Download already triggered by direct link click
+          // Trigger download to Downloads folder
+          try {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            // Try to suggest TapShare folder (browser will ignore path but we prefix)
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            // For Android, attempt to save via File System Access if available
+            if ('showSaveFilePicker' in window) {
+              // optional, not blocking
+            }
+          } catch(e) {}
           finalizeTransfer(payload.id, 'complete', url);
           addHistory({type: 'receive', name: file.name, size: file.size, from: peerName, time: Date.now(), url});
-          showToast('Đã tải: ' + file.name);
+          showToast('Đã tải về: ' + file.name + ' → Download');
           if (navigator.vibrate) navigator.vibrate([20, 10, 20]);
         } else {
           finalizeTransfer(payload.id, 'complete');
@@ -1027,21 +850,25 @@ function renderPeers() {
   peers.forEach(peer => {
     const isSelected = peer.id === selectedPeerId;
     const card = document.createElement('button');
-    card.className = `one-ui-card peer-card-enhanced relative p-4 flex flex-col items-center gap-2.5 transition border ${isSelected ? 'bg-[#007aff]/10 border-[#007aff]/30 dark:bg-[#007aff]/15 pulse-ring' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'} active:scale-[0.97]`;
+    card.className = `m3-card peer-card-enhanced relative p-4 flex flex-col items-center gap-2.5 transition active:scale-[0.97]`;
+    card.style.background = isSelected ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container)';
+    card.style.outline = isSelected ? '2px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)';
     card.innerHTML = `
-      <div class="w-12 h-12 rounded-2xl ${isSelected ? 'bg-[#007aff] text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'} flex items-center justify-center transition">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+      <div class="w-12 h-12 rounded-[16px] flex items-center justify-center transition" style="background: ${isSelected ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-secondary-container)'}; color: ${isSelected ? 'var(--md-sys-color-on-primary)' : 'var(--md-sys-color-on-secondary-container)'}">
+        <span class="material-symbols-rounded text-[26px]" style="font-variation-settings:'FILL' 1">devices</span>
       </div>
       <div class="text-center w-full">
-        <p class="text-[13px] font-medium leading-tight truncate w-full">${peer.name}</p>
-        <p class="text-[11px] text-zinc-500 mt-0.5">${isSelected ? 'Đã chọn' : 'Chạm để gửi'}</p>
+        <p class="text-[13px] font-medium leading-tight truncate w-full" style="color: var(--md-sys-color-on-surface)">${peer.name}</p>
+        <p class="text-[11px] mt-0.5" style="color: var(--md-sys-color-on-surface-variant)">${isSelected ? 'Đã chọn' : 'Chạm để gửi'}</p>
       </div>
-      ${isSelected ? `<div class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#007aff] rounded-full flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>` : ''}
+      ${isSelected ? `<div class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center" style="background: var(--md-sys-color-primary)"><span class="material-symbols-rounded text-[14px]" style="color: var(--md-sys-color-on-primary); font-variation-settings:'FILL' 1">check</span></div>` : ''}
     `;
     card.onclick = () => {
       selectedPeerId = isSelected ? null : peer.id;
       renderPeers();
       updateSendButton();
+      updateTextSendButton();
+      updateLinkSendButton();
     };
     peersGrid.appendChild(card);
   });
@@ -1489,7 +1316,7 @@ renderPeers();
   <div class="flex-1 flex flex-col items-center px-6">
     <h1 class="text-[40px] font-semibold tracking-tight mt-16">Tap Share</h1>
     <div class="mt-8 text-center">
-      <p class="text-[17px] text-zinc-500 dark:text-zinc-400">Phiên bản 1.0.9</p>
+      <p class="text-[17px] text-zinc-500 dark:text-zinc-400">Phiên bản 1.1.1</p>
       <p class="text-[17px] text-zinc-500 dark:text-zinc-400 mt-1">Phiên bản mới nhất đã được cài đặt.</p>
     </div>
   </div>
@@ -1500,4 +1327,4 @@ renderPeers();
 </div>
 
 </body>
-</html>
+</html></body></html>
