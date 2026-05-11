@@ -136,6 +136,1316 @@ h1, h2 { font-family: 'Google Sans', 'Roboto', sans-serif; }
 @keyframes dropIn { 0% { transform: translateY(-180px) scale(0.6); opacity: 0; } 70% { transform: translateY(12px) scale(1.08); opacity: 1; } 100% { transform: translateY(0) scale(1); } }
 @keyframes flyUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-200px) scale(0.3); opacity: 0; } }
 .drop-anim { animation: dropIn 0.65s cubic-bezier(.2,.8,.2,1); }
+
+/* Markdown rendering */
+.markdown-content h1, .markdown-content h2, .markdown-content h3 { font-weight: 600; margin: 0.8em 0 0.4em; line-height: 1.3; }
+.markdown-content h1 { font-size: 1.4em; }
+.markdown-content h2 { font-size: 1.2em; }
+.markdown-content h3 { font-size: 1.05em; }
+.markdown-content p { margin: 0.5em 0; }
+.markdown-content ul, .markdown-content ol { padding-left: 1.4em; margin: 0.5em 0; }
+.markdown-content li { margin: 0.25em 0; }
+.markdown-content code { background: var(--md-sys-color-surface-container-high); padding: 0.15em 0.4em; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
+.markdown-content pre { background: var(--md-sys-color-surface-container-high); padding: 0.8em; border-radius: 12px; overflow-x: auto; margin: 0.8em 0; }
+.markdown-content pre code { background: transparent; padding: 0; }
+.markdown-content blockquote { border-left: 3px solid var(--md-sys-color-outline-variant); padding-left: 0.8em; color: var(--md-sys-color-on-surface-variant); margin: 0.8em 0; }
+.markdown-content a { color: var(--md-sys-color-primary); text-decoration: underline; }
+.markdown-content img { max-width: 100%; border-radius: 12px; margin: 0.5em 0; }
+.markdown-content table { width: 100%; border-collapse: collapse; margin: 0.8em 0; font-size: 0.9em; }
+.markdown-content th, .markdown-content td { border: 1px solid var(--md-sys-color-outline-variant); padding: 0.4em 0.6em; text-align: left; }
+.markdown-content hr { border: none; border-top: 1px solid var(--md-sys-color-outline-variant); margin: 1em 0; }
+</style>
+<meta name="theme-color" content="#FEF7FF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141218" media="(prefers-color-scheme: dark)">
+</head>
+<body class="antialiased selection:bg-[var(--md-sys-color-primary-container)]">
+
+<div class="max-w-[840px] mx-auto min-h-screen flex flex-col">
+  <header class="sticky top-0 z-30" style="background: color-mix(in srgb, var(--md-sys-color-surface) 85%, transparent); backdrop-filter: blur(12px);">
+    <div class="px-4 sm:px-6 pt-6 pb-4">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h1 class="text-[32px] leading-none font-medium tracking-tight" style="font-family:'Google Sans',Roboto,sans-serif">Tap Share</h1>
+          <p class="mt-1 text-[14px]" style="color: var(--md-sys-color-on-surface-variant)">Chia sẻ tệp, văn bản & link siêu nhanh</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="infoBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[var(--md-sys-color-surface-container-high)] active:scale-95 transition" style="color: var(--md-sys-color-on-surface-variant)">
+            <span class="material-symbols-rounded">info</span>
+          </button>
+          <button id="devicePill" class="m3-chip flex items-center gap-1.5 pl-3 pr-3 py-2 active:scale-[0.98] transition">
+            <span class="material-symbols-rounded text-[20px]" style="color: var(--md-sys-color-primary)">smartphone</span>
+            <span id="deviceNameText" class="text-[13px] font-medium max-w-[110px] truncate">Đang nhận diện...</span>
+          </button>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center gap-2 text-[12px]" style="color: var(--md-sys-color-on-surface-variant)">
+        <span class="material-symbols-rounded text-[16px]">wifi</span>
+        <span id="networkInfo" class="truncate">Đang kết nối...</span>
+        <span class="w-1 h-1 rounded-full" style="background: var(--md-sys-color-outline-variant)"></span>
+        <span id="peerCount">0 thiết bị</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 px-4 sm:px-6 pb-28">
+    <section class="mt-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-[22px] font-medium" style="font-family:'Google Sans'">Thiết bị xung quanh</h2>
+        <button id="refreshBtn" class="m3-text-button px-3 py-1.5 rounded-full text-[14px] font-medium hover:bg-[var(--md-sys-color-primary-container)]/30" style="color: var(--md-sys-color-primary)">Làm mới</button>
+      </div>
+      <div id="peersGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-3"></div>
+      <div id="emptyPeers" class="m3-card p-8 text-center">
+        <div class="w-16 h-16 mx-auto rounded-[20px] flex items-center justify-center mb-4" style="background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container)">
+          <span class="material-symbols-rounded text-[32px]">radar</span>
+        </div>
+        <p class="text-[16px] font-medium">Đang tìm thiết bị gần đây</p>
+        <p class="text-[14px] mt-1" style="color: var(--md-sys-color-on-surface-variant)">Đảm bảo các thiết bị cùng mạng Wi-Fi</p>
+      </div>
+    </section>
+
+    <section class="mt-8">
+      <div class="m3-card overflow-hidden">
+        <div id="dropZone" class="relative p-8 text-center cursor-pointer transition active:opacity-80">
+          <input id="fileInput" type="file" multiple class="hidden">
+          <div class="w-14 h-14 mx-auto rounded-[16px] flex items-center justify-center mb-3" style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container)">
+            <span class="material-symbols-rounded text-[28px]">upload</span>
+          </div>
+          <p class="text-[16px] font-medium">Chọn tệp hoặc kéo thả vào đây</p>
+          <p class="text-[14px] mt-1" style="color: var(--md-sys-color-on-surface-variant)">Hỗ trợ gửi nhiều tệp cùng lúc</p>
+        </div>
+        <div id="selectedFiles" class="hidden border-t p-4" style="border-color: var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-high)">
+          <div class="flex items-center justify-between mb-2.5">
+            <p class="text-[13px] font-medium" style="color: var(--md-sys-color-on-surface-variant)">Đã chọn <span id="fileCount">0</span> tệp</p>
+            <button id="clearFiles" class="text-[12px] hover:underline" style="color: var(--md-sys-color-error)">Xóa</button>
+          </div>
+          <div id="filePreviewList" class="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1"></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <button id="openTextShare" class="m3-card p-4 flex flex-col items-center gap-2 active:scale-[0.98] transition">
+          <div class="w-10 h-10 rounded-[12px] flex items-center justify-center" style="background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container)">
+            <span class="material-symbols-rounded">article</span>
+          </div>
+          <span class="text-[13px] font-medium">Văn bản</span>
+        </button>
+        <button id="openLinkShare" class="m3-card p-4 flex flex-col items-center gap-2 active:scale-[0.98] transition">
+          <div class="w-10 h-10 rounded-[12px] flex items-center justify-center" style="background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container)">
+            <span class="material-symbols-rounded">link</span>
+          </div>
+          <span class="text-[13px] font-medium">Liên kết</span>
+        </button>
+      </div>
+
+      <div id="textSharePanel" class="hidden mt-3 m3-card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-[16px] font-medium" style="font-family:'Google Sans'">Chia sẻ văn bản</p>
+          <button id="closeTextPanel" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--md-sys-color-surface-container-high)]"><span class="material-symbols-rounded text-[20px]">close</span></button>
+        </div>
+        <textarea id="textInput" rows="4" placeholder="Nhập văn bản cần chia sẻ..." class="w-full p-3.5 text-[14px] rounded-[16px] outline-none resize-none" style="background: var(--md-sys-color-surface-container-highest); border: 1px solid var(--md-sys-color-outline-variant); color: var(--md-sys-color-on-surface)"></textarea>
+        <button id="sendTextBtn" disabled class="mt-3 w-full py-3 rounded-[20px] font-medium text-[14px] transition" style="background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface-variant)">Chọn thiết bị để gửi</button>
+      </div>
+
+      <div id="linkSharePanel" class="hidden mt-3 m3-card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-[16px] font-medium" style="font-family:'Google Sans'">Chia sẻ liên kết</p>
+          <button id="closeLinkPanel" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--md-sys-color-surface-container-high)]"><span class="material-symbols-rounded text-[20px]">close</span></button>
+        </div>
+        <input id="linkInput" type="url" placeholder="https://..." class="w-full p-3.5 text-[14px] rounded-[16px] outline-none" style="background: var(--md-sys-color-surface-container-highest); border: 1px solid var(--md-sys-color-outline-variant)" />
+        <div class="flex gap-2 mt-3 overflow-x-auto scrollbar-hide">
+          <button class="quick-link px-3 py-1.5 text-[12px] rounded-full" style="background: var(--md-sys-color-surface-container-high)" data-url="https://">https://</button>
+          <button class="quick-link px-3 py-1.5 text-[12px] rounded-full" style="background: var(--md-sys-color-surface-container-high)" data-url="https://m.me/">Messenger</button>
+          <button class="quick-link px-3 py-1.5 text-[12px] rounded-full" style="background: var(--md-sys-color-surface-container-high)" data-url="https://zalo.me/">Zalo</button>
+        </div>
+        <button id="sendLinkBtn" disabled class="mt-3 w-full py-3 rounded-[20px] font-medium text-[14px] transition" style="background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface-variant)">Chọn thiết bị để gửi</button>
+      </div>
+
+      <div id="sendAction" class="hidden mt-4">
+        <button id="sendBtn" disabled class="w-full m3-card font-medium py-4 px-6 flex items-center justify-center gap-2.5 transition" style="background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface-variant)">
+          <span class="material-symbols-rounded">send</span>
+          <span>Chọn thiết bị để gửi</span>
+        </button>
+      </div>
+    </section>
+
+    <section id="transfersSection" class="mt-8 hidden">
+      <h2 class="text-[22px] font-medium mb-3" style="font-family:'Google Sans'">Đang truyền</h2>
+      <div id="transfersList" class="space-y-3"></div>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="text-[22px] font-medium mb-3" style="font-family:'Google Sans'">Lịch sử phiên</h2>
+      <div id="historyList" class="space-y-2.5">
+        <div id="emptyHistory" class="text-[14px] py-6 text-center" style="color: var(--md-sys-color-on-surface-variant)">Chưa có hoạt động nào</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300">
+  <div class="px-4 py-3 rounded-[16px] flex items-center gap-2.5" style="background: var(--md-sys-color-inverse-surface); color: var(--md-sys-color-inverse-on-surface); box-shadow: var(--md-elevation-2)">
+    <span class="material-symbols-rounded text-[18px]" style="color: #4CAF50">check_circle</span>
+    <span id="toastText" class="text-[14px] font-medium whitespace-nowrap">Đã gửi thành công</span>
+  </div>
+</div>
+<script type="module">
+import {joinRoom} from 'https://cdn.jsdelivr.net/npm/trystero@0.21.0/+esm';
+
+const CHUNK_SIZE = 32 * 1024; // 32KB
+const modelMap = {
+  'SM-S918B': 'Galaxy S23 Ultra', 'SM-S918U': 'Galaxy S23 Ultra', 'SM-S918': 'Galaxy S23 Ultra',
+  'SM-S911B': 'Galaxy S23', 'SM-S911': 'Galaxy S23',
+  'SM-S916B': 'Galaxy S23+', 'SM-S916': 'Galaxy S23+',
+  'SM-S921B': 'Galaxy S24', 'SM-S921': 'Galaxy S24',
+  'SM-S926B': 'Galaxy S24+', 'SM-S926': 'Galaxy S24+',
+  'SM-S928B': 'Galaxy S24 Ultra', 'SM-S928': 'Galaxy S24 Ultra',
+  'SM-A546B': 'Galaxy A54', 'SM-A546E': 'Galaxy A54', 'SM-A546': 'Galaxy A54',
+  'SM-A736B': 'Galaxy A73', 'SM-A736': 'Galaxy A73',
+  'SM-A536B': 'Galaxy A53', 'SM-A536': 'Galaxy A53',
+  'SM-A336B': 'Galaxy A33',
+};
+
+let myDeviceName = '';
+let myInstanceId = localStorage.getItem('tapshare_instance') || Math.random().toString(36).slice(2,10);
+localStorage.setItem('tapshare_instance', myInstanceId);
+let selectedPeerId = null;
+let selectedFiles = [];
+let room = null;
+let sendMeta, onMeta, sendChunk, onChunk, sendDone, onDone, sendPing, onPing;
+const peers = new Map();
+const peersByInstance = new Map();
+const incomingFiles = new Map();
+const history = [];
+
+const el = id => document.getElementById(id);
+const deviceNameText = el('deviceNameText');
+const devicePill = el('devicePill');
+const networkInfo = el('networkInfo');
+const peerCount = el('peerCount');
+const peersGrid = el('peersGrid');
+const emptyPeers = el('emptyPeers');
+const fileInput = el('fileInput');
+const dropZone = el('dropZone');
+const selectedFilesWrap = el('selectedFiles');
+const filePreviewList = el('filePreviewList');
+const fileCount = el('fileCount');
+const sendAction = el('sendAction');
+const sendBtn = el('sendBtn');
+const clearFiles = el('clearFiles');
+const transfersSection = el('transfersSection');
+const transfersList = el('transfersList');
+const historyList = el('historyList');
+const emptyHistory = el('emptyHistory');
+const toast = el('toast');
+const toastText = el('toastText');
+
+function detectDeviceName() {
+  const ua = navigator.userAgent;
+  let model = '';
+
+  if (/Android/i.test(ua)) {
+    let m = ua.match(/Android [\d.]+; ([^;]+) Build/i) || ua.match(/; ([^;]+)\)/);
+    if (m) model = m[1].trim();
+    for (const k in modelMap) if (model.includes(k)) { model = modelMap[k]; break; }
+    if (!model || model === 'Android') {
+      if (/Pixel 8 Pro/i.test(ua)) model = 'Pixel 8 Pro';
+      else if (/Pixel 8/i.test(ua)) model = 'Pixel 8';
+      else if (/Pixel 7 Pro/i.test(ua)) model = 'Pixel 7 Pro';
+      else if (/Pixel 7/i.test(ua)) model = 'Pixel 7';
+      else if (/Pixel 6/i.test(ua)) model = 'Pixel 6';
+      else if (/Xiaomi|Mi \d|Redmi|POCO/i.test(ua)) {
+        const xm = ua.match(/(Xiaomi|Redmi|POCO)[^;)]*/i);
+        model = xm ? xm[0] : 'Xiaomi';
+      } else if (/OPPO|CPH/i.test(ua)) {
+        const op = ua.match(/(OPPO|CPH\d+)/i);
+        model = op ? op[0] : 'OPPO';
+      } else if (/vivo/i.test(ua)) model = 'vivo';
+      else if (/realme/i.test(ua)) model = 'realme';
+      else model = model || 'Thiết bị Android';
+    }
+  } else if (/iPhone/i.test(ua)) {
+    const w = Math.min(window.screen.width, window.screen.height);
+    const h = Math.max(window.screen.width, window.screen.height);
+    const ratio = window.devicePixelRatio;
+    if (w === 430 && h === 932) model = 'iPhone 15 Pro Max';
+    else if (w === 393 && h === 852 && ratio === 3) model = 'iPhone 15 Pro';
+    else if (w === 428 && h === 926) model = 'iPhone 14 Plus';
+    else if (w === 390 && h === 844 && ratio === 3) model = 'iPhone 14 Pro';
+    else if (w === 390 && h === 844) model = 'iPhone 14';
+    else if (w === 414 && h === 896 && ratio === 3) model = 'iPhone 11 Pro Max';
+    else if (w === 414 && h === 896) model = 'iPhone 11';
+    else if (w === 375 && h === 812 && ratio === 3) model = 'iPhone 13 mini';
+    else if (w === 375 && h === 667) model = 'iPhone SE';
+    else model = 'iPhone';
+  } else if (/iPad/i.test(ua)) model = 'iPad';
+  else if (/Macintosh|Mac OS/i.test(ua)) model = 'Mac';
+  else if (/Windows/i.test(ua)) model = 'PC Windows';
+  else model = 'Thiết bị';
+
+  return model;
+}
+
+async function enhanceWithUAData() {
+  try {
+    if (navigator.userAgentData?.getHighEntropyValues) {
+      const data = await navigator.userAgentData.getHighEntropyValues(['model', 'platformVersion']);
+      if (data.model) {
+        let m = data.model;
+        if (modelMap[m]) m = modelMap[m];
+        if (m && !localStorage.getItem('tapshare_custom')) {
+          myDeviceName = m;
+          updateDeviceNameUI();
+          if (room && sendPing) sendPing({name: myDeviceName, instanceId: myInstanceId});
+        }
+      }
+    }
+  } catch {}
+}
+
+
+
+// --- AirDrop Gather Effect ---
+const airdropOverlay = el('airdropOverlay');
+const airdropStack = el('airdropStack');
+const airdropCount = el('airdropCount');
+let gatherActive = false;
+
+function triggerGather() {
+  if (gatherActive || !selectedPeerId) return;
+  const selectedSet = window._airdropSelected || new Set();
+  if (selectedSet.size === 0) return;
+  
+  gatherActive = true;
+  airdropOverlay.classList.remove('hidden');
+  airdropCount.textContent = selectedSet.size;
+  airdropStack.innerHTML = '';
+  
+  // Create stack of files moving to center
+  const files = Array.from(selectedSet).map(i => selectedFiles[i]).filter(Boolean);
+  files.slice(0,6).forEach((file, i) => {
+    const isImg = file.type.startsWith('image/');
+    const el = document.createElement('div');
+    el.className = 'absolute w-[90px] h-[90px] rounded-2xl overflow-hidden bg-zinc-800 shadow-xl transition-all duration-500';
+    el.style.transform = `translate(${(Math.random()-0.5)*400}px, ${(Math.random()-0.5)*400}px) rotate(${(Math.random()-0.5)*60}deg) scale(0.7)`;
+    el.style.opacity = '0';
+    el.innerHTML = isImg ? `<img class="w-full h-full object-cover" src="${URL.createObjectURL(file)}">` : `<div class="w-full h-full flex items-center justify-center text-zinc-500"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>`;
+    airdropStack.appendChild(el);
+    setTimeout(() => {
+      el.style.transform = `translate(0,0) rotate(${(i - 3)*3}deg) scale(1)`;
+      el.style.opacity = '1';
+    }, 50 + i*80);
+  });
+  
+  // Swipe detection
+  let startX=0, startY=0;
+  const onStart = (x,y) => { startX=x; startY=y; };
+  const onEnd = (x,y) => {
+    const dx = x-startX, dy = y-startY;
+    const dist = Math.hypot(dx,dy);
+    if (dist > 60) {
+      sendGatheredFiles(dx, dy, files);
+    }
+  };
+  
+  const touchStart = e => onStart(e.touches[0].clientX, e.touches[0].clientY);
+  const touchEnd = e => onEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  const mouseDown = e => onStart(e.clientX, e.clientY);
+  const mouseUp = e => onEnd(e.clientX, e.clientY);
+  
+  airdropOverlay.addEventListener('touchstart', touchStart, {once:true});
+  airdropOverlay.addEventListener('touchend', touchEnd, {once:true});
+  airdropOverlay.addEventListener('mousedown', mouseDown, {once:true});
+  window.addEventListener('mouseup', mouseUp, {once:true});
+}
+
+async function sendGatheredFiles(dx, dy, files) {
+  const angle = Math.atan2(dy, dx);
+  const flyX = Math.cos(angle) * 400;
+  const flyY = Math.sin(angle) * 400;
+  
+  // Animate out
+  Array.from(airdropStack.children).forEach((el,i) => {
+    setTimeout(() => {
+      el.style.transition = 'transform 0.5s cubic-bezier(.2,.8,.2,1), opacity 0.4s';
+      el.style.transform = `translate(${flyX + (Math.random()-0.5)*50}px, ${flyY + (Math.random()-0.5)*50}px) rotate(${Math.random()*60-30}deg) scale(0.3)`;
+      el.style.opacity = '0';
+    }, i*60);
+  });
+  
+  if (navigator.vibrate) navigator.vibrate([20,40,20]);
+  showToast(`Đang AirDrop ${files.length} tệp`);
+  
+  // Send files
+  for (const file of files) {
+    await sendFile(selectedPeerId, file);
+    await new Promise(r => setTimeout(r, 150));
+  }
+  
+  // Cleanup
+  setTimeout(() => {
+    airdropOverlay.classList.add('hidden');
+    gatherActive = false;
+    window._airdropSelected = new Set();
+    clearSelectedFiles();
+  }, 700);
+}
+
+// --- Modal System ---
+const actionModal = el('actionModal');
+const modalTitle = el('modalTitle');
+const modalFrom = el('modalFrom');
+const modalFileName = el('modalFileName');
+const modalFileInfo = el('modalFileInfo');
+const modalTextPreview = el('modalTextPreview');
+const modalBtnLeft = el('modalBtnLeft');
+const modalBtnRight = el('modalBtnRight');
+const modalIcon = el('modalIcon');
+const modalBackdrop = el('modalBackdrop');
+
+let currentModalResolve = null;
+
+function showActionModal({type, title, from, fileName, fileInfo, text, icon, isMarkdown}) {
+  return new Promise(resolve => {
+    currentModalResolve = resolve;
+    modalTitle.textContent = title;
+    modalFrom.textContent = from ? `Từ ${from}` : '';
+    modalFileName.textContent = fileName || '';
+    modalFileInfo.textContent = fileInfo || '';
+    
+    if (text) {
+      modalTextPreview.classList.remove('hidden');
+      if (isMarkdown && window.marked) {
+        modalTextPreview.innerHTML = marked.parse(text);
+        modalTextPreview.className = 'mt-2 text-[14px] max-w-none break-words markdown-content';
+      } else {
+        modalTextPreview.textContent = text;
+        modalTextPreview.className = 'mt-2 text-[14px] whitespace-pre-wrap break-words';
+      }
+      modalFileName.classList.add('hidden');
+    } else {
+      modalTextPreview.classList.add('hidden');
+      modalFileName.classList.remove('hidden');
+    }
+    
+    if (icon) modalIcon.innerHTML = icon;
+    modalIcon.classList.remove('drop-anim');
+    void modalIcon.offsetWidth;
+    if (type === 'file') modalIcon.classList.add('drop-anim');
+    
+    if (type === 'file') {
+      modalBtnLeft.textContent = 'Từ chối';
+      modalBtnRight.textContent = 'Chấp nhận';
+      modalBtnRight.className = 'py-3 rounded-xl bg-[#007aff] text-white font-medium text-[15px] active:scale-[0.98]';
+    } else if (type === 'text') {
+      modalBtnLeft.textContent = 'Hoàn tất';
+      modalBtnRight.textContent = 'Sao chép';
+      modalBtnRight.className = 'py-3 rounded-xl bg-[#007aff] text-white font-medium text-[15px] active:scale-[0.98]';
+    } else if (type === 'link') {
+      modalBtnLeft.textContent = 'Sao chép';
+      modalBtnRight.textContent = 'Mở';
+      modalBtnRight.className = 'py-3 rounded-xl bg-[#007aff] text-white font-medium text-[15px] active:scale-[0.98]';
+    }
+    
+    
+      // Show receiver AirDrop effect
+      if (type === 'file') {
+        airdropOverlay.classList.remove('hidden');
+        airdropStack.innerHTML = `<div class="w-[100px] h-[100px] rounded-2xl bg-[#007aff]/20 flex items-center justify-center drop-anim"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg></div>`;
+        airdropCount.textContent = '1';
+        setTimeout(() => airdropOverlay.classList.add('hidden'), 900);
+      }
+
+    actionModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  });
+}
+
+function hideModal(result) {
+  actionModal.classList.add('hidden');
+  document.body.style.overflow = '';
+  if (currentModalResolve) {
+    currentModalResolve(result);
+    currentModalResolve = null;
+  }
+}
+
+modalBtnLeft.onclick = () => hideModal('left');
+modalBtnRight.onclick = () => hideModal('right');
+modalBackdrop.onclick = () => hideModal('left');
+
+
+// Info screen
+const infoBtn = document.getElementById('infoBtn');
+const infoScreen = document.getElementById('infoScreen');
+const infoBack = document.getElementById('infoBack');
+if(infoBtn){
+  infoBtn.addEventListener('click', () => {
+    infoScreen.classList.remove('hidden');
+  });
+}
+if(infoBack){
+  infoBack.addEventListener('click', () => {
+    infoScreen.classList.add('hidden');
+  });
+}
+const openSourceBtn = document.getElementById('openSourceBtn');
+if(openSourceBtn){
+  openSourceBtn.addEventListener('click', () => {
+    alert('Tap Share - MIT License 2026');
+  });
+}
+
+function initDeviceName() {
+  const custom = localStorage.getItem('tapshare_custom');
+  myDeviceName = custom || detectDeviceName();
+  updateDeviceNameUI();
+  enhanceWithUAData();
+}
+
+function updateDeviceNameUI() {
+  deviceNameText.textContent = myDeviceName;
+}
+
+devicePill.addEventListener('click', () => {
+  const current = localStorage.getItem('tapshare_custom') || myDeviceName;
+  const name = prompt('Đặt tên thiết bị:', current);
+  if (name && name.trim()) {
+    myDeviceName = name.trim().slice(0, 24);
+    localStorage.setItem('tapshare_custom', myDeviceName);
+    updateDeviceNameUI();
+    if (sendPing) {
+      for (const pid of peers.keys()) sendPing({name: myDeviceName, instanceId: myInstanceId}, pid);
+    }
+    showToast('Đã đổi tên thiết bị');
+  }
+});
+
+function showToast(msg) {
+  toastText.textContent = msg;
+  toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+  toast.classList.add('opacity-100', 'translate-y-0');
+  if (navigator.vibrate) navigator.vibrate(25);
+  setTimeout(() => {
+    toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+    toast.classList.remove('opacity-100', 'translate-y-0');
+  }, 2200);
+}
+
+function formatBytes(b) {
+  if (b === 0) return '0 B';
+  const k = 1024, sizes = ['B','KB','MB','GB'];
+  const i = Math.floor(Math.log(b)/Math.log(k));
+  return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+sizes[i];
+}
+
+function formatSpeed(bps) {
+  return formatBytes(bps)+'/s';
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i=0; i<bytes.length; i+=chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunk));
+  }
+  return btoa(binary);
+}
+function base64ToUint8(b64) {
+  const binary = atob(b64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i=0; i<len; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+async function initNetwork() {
+  let ipPrefix = 'local';
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const {ip} = await res.json();
+    ipPrefix = ip.split('.').slice(0,3).join('-');
+    networkInfo.textContent = `Mạng ${ip.split('.').slice(0,3).join('.')}.x`;
+  } catch {
+    networkInfo.textContent = 'Mạng cục bộ';
+  }
+  
+  room = joinRoom({appId: 'tapshare-vn-v3-2024'}, 'tap-'+ipPrefix);
+  
+  [sendMeta, onMeta] = room.makeAction('meta');
+  [sendChunk, onChunk] = room.makeAction('chunk');
+  [sendDone, onDone] = room.makeAction('done');
+  [sendPing, onPing] = room.makeAction('ping');
+
+  room.onPeerJoin(peerId => {
+    // Không thêm ngay, chờ ping để xác thực không phải chính mình
+    sendPing({name: myDeviceName, instanceId: myInstanceId}, peerId);
+  });
+  
+  room.onPeerLeave(peerId => {
+    peers.delete(peerId);
+    if (selectedPeerId === peerId) selectedPeerId = null;
+    renderPeers();
+    updateSendButton();
+    updateTextSendButton();
+    updateLinkSendButton();
+  });
+
+  onPing((data, peerId) => {
+    if (!data || !data.instanceId) return;
+    
+    // 1. Lọc chính mình
+    if (data.instanceId === myInstanceId) {
+      peers.delete(peerId);
+      peersByInstance.delete(data.instanceId);
+      renderPeers();
+      return;
+    }
+    
+    // 2. Xóa thiết bị trùng lặp (cùng instanceId nhưng peerId cũ)
+    if (peersByInstance.has(data.instanceId)) {
+      const oldPeerId = peersByInstance.get(data.instanceId);
+      if (oldPeerId !== peerId) {
+        peers.delete(oldPeerId);
+      }
+    }
+    peersByInstance.set(data.instanceId, peerId);
+    
+    // 3. Thêm/cập nhật peer
+    if (!peers.has(peerId)) {
+      peers.set(peerId, {id: peerId, name: data.name || 'Thiết bị', instanceId: data.instanceId});
+    } else {
+      peers.get(peerId).name = data.name || 'Thiết bị';
+    }
+    renderPeers();
+  });
+
+  onMeta((meta, peerId) => {
+    if (meta.type === 'text/link' && meta.content) {
+      const id = meta.id;
+      const peerName = peers.get(peerId)?.name || 'Thiết bị';
+      createTransferCard(id, meta.content, meta.size, 'text/link', 'receive', peerName);
+      
+      showActionModal({
+        type: 'link',
+        title: 'Đã nhận liên kết',
+        from: peerName,
+        fileName: meta.content,
+        fileInfo: 'Liên kết web',
+        icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
+      }).then(result => {
+        if (result === 'right') {
+          window.open(meta.content, '_blank');
+        } else {
+          navigator.clipboard.writeText(meta.content).then(()=>showToast('Đã sao chép liên kết'));
+        }
+      });
+      
+      finalizeTransfer(id, 'complete');
+      addHistory({type: 'receive', name: meta.content, size: meta.size, from: peerName, time: Date.now(), url: meta.content});
+      showToast('Đã nhận liên kết');
+      if (navigator.vibrate) navigator.vibrate([20,10,20]);
+      return;
+    }
+    incomingFiles.set(meta.id, {
+      ...meta,
+      chunks: new Array(meta.total),
+      received: 0,
+      peerId,
+      startTime: performance.now()
+    });
+    createTransferCard(meta.id, meta.name, meta.size, meta.type, 'receive', peers.get(peerId)?.name || 'Thiết bị');
+  });
+
+  onChunk((payload, peerId) => {
+    const file = incomingFiles.get(payload.id);
+    if (!file) return;
+    file.chunks[payload.index] = base64ToUint8(payload.data);
+    file.received++;
+    const percent = Math.floor((file.received / file.total) * 100);
+    const elapsed = (performance.now() - file.startTime) / 1000;
+    const receivedBytes = file.received * CHUNK_SIZE;
+    const speed = receivedBytes / Math.max(elapsed, 0.1);
+    updateTransferProgress(payload.id, percent, speed, receivedBytes);
+    
+    if (file.received === file.total) {
+      const blob = new Blob(file.chunks, {type: file.type || 'application/octet-stream'});
+      const url = URL.createObjectURL(blob);
+      
+      // Handle text files specially
+      if ((file.type === 'text/plain' || file.type === 'text/markdown' || file.name.endsWith('.md')) && file.size < 100000) {
+        blob.text().then(async text => {
+          const peerName = peers.get(peerId)?.name || 'Thiết bị';
+          finalizeTransfer(payload.id, 'complete', url);
+          addHistory({type: 'receive', name: file.name, size: file.size, from: peerName, time: Date.now(), url});
+          showToast('Đã nhận văn bản');
+          if (navigator.vibrate) navigator.vibrate([20, 10, 20]);
+          
+          const isLink = /^https?:\/\//i.test(text.trim()) || file.name.includes('link');
+          
+          if (isLink) {
+            const result = await showActionModal({
+              type: 'link',
+              title: 'Đã nhận liên kết',
+              from: peerName,
+              fileName: text.trim(),
+              fileInfo: 'Nhấn Mở để truy cập',
+              icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
+            });
+            if (result === 'right') window.open(text.trim(), '_blank');
+            else navigator.clipboard.writeText(text.trim()).then(()=>showToast('Đã sao chép'));
+          } else {
+            const isMarkdown = file.type === 'text/markdown' || file.name.endsWith('.md');
+            const result = await showActionModal({
+              type: 'text',
+              title: isMarkdown ? 'Đã nhận Markdown' : 'Đã nhận văn bản',
+              from: peerName,
+              text: text,
+              fileInfo: `${formatBytes(file.size)} • ${file.name}`,
+              icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+              isMarkdown: isMarkdown
+            });
+            if (result === 'right') navigator.clipboard.writeText(text).then(()=>showToast('Đã sao chép văn bản'));
+          }
+        });
+        incomingFiles.delete(payload.id);
+        return;
+      }
+      
+      const peerName = peers.get(peerId)?.name || 'Thiết bị';
+      
+      // Show accept/reject modal instead of auto-download
+      showActionModal({
+        type: 'file',
+        title: 'Yêu cầu nhận tệp',
+        from: peerName,
+        fileName: file.name,
+        fileInfo: `${formatBytes(file.size)} • ${file.type || 'Tệp'}`,
+        icon: '<span class="material-symbols-rounded" style="color:var(--md-sys-color-primary);font-size:22px">download</span>',
+        downloadUrl: url,
+        downloadName: file.name
+      }).then(result => {
+        if (result === 'right') {
+          // Trigger download to Downloads folder
+          try {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            // Try to suggest TapShare folder (browser will ignore path but we prefix)
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            // For Android, attempt to save via File System Access if available
+            if ('showSaveFilePicker' in window) {
+              // optional, not blocking
+            }
+          } catch(e) {}
+          finalizeTransfer(payload.id, 'complete', url);
+          addHistory({type: 'receive', name: file.name, size: file.size, from: peerName, time: Date.now(), url});
+          showToast('Đã tải về: ' + file.name + ' → Download');
+          if (navigator.vibrate) navigator.vibrate([20, 10, 20]);
+        } else {
+          finalizeTransfer(payload.id, 'complete');
+          showToast('Đã từ chối tệp');
+          URL.revokeObjectURL(url);
+        }
+      });
+      
+      incomingFiles.delete(payload.id);
+    }
+  });
+
+  onDone(()=>{});
+}
+
+function renderPeers() {
+  peersGrid.innerHTML = '';
+  const count = peers.size;
+  peerCount.textContent = `${count} thiết bị`;
+  emptyPeers.style.display = count ? 'none' : 'block';
+  
+  peers.forEach(peer => {
+    const isSelected = peer.id === selectedPeerId;
+    const card = document.createElement('button');
+    card.className = `m3-card peer-card-enhanced relative p-4 flex flex-col items-center gap-2.5 transition active:scale-[0.97]`;
+    card.style.background = isSelected ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container)';
+    card.style.outline = isSelected ? '2px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)';
+    card.innerHTML = `
+      <div class="w-12 h-12 rounded-[16px] flex items-center justify-center transition" style="background: ${isSelected ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-secondary-container)'}; color: ${isSelected ? 'var(--md-sys-color-on-primary)' : 'var(--md-sys-color-on-secondary-container)'}">
+        <span class="material-symbols-rounded text-[26px]" style="font-variation-settings:'FILL' 1">devices</span>
+      </div>
+      <div class="text-center w-full">
+        <p class="text-[13px] font-medium leading-tight truncate w-full" style="color: var(--md-sys-color-on-surface)">${peer.name}</p>
+        <p class="text-[11px] mt-0.5" style="color: var(--md-sys-color-on-surface-variant)">${isSelected ? 'Đã chọn' : 'Chạm để gửi'}</p>
+      </div>
+      ${isSelected ? `<div class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center" style="background: var(--md-sys-color-primary)"><span class="material-symbols-rounded text-[14px]" style="color: var(--md-sys-color-on-primary); font-variation-settings:'FILL' 1">check</span></div>` : ''}
+    `;
+    card.onclick = () => {
+      selectedPeerId = isSelected ? null : peer.id;
+      renderPeers();
+      updateSendButton();
+      updateTextSendButton();
+      updateLinkSendButton();
+    };
+    peersGrid.appendChild(card);
+  });
+}
+
+function handleFiles(files) {
+  selectedFiles = Array.from(files).slice(0, 20);
+  if (!selectedFiles.length) return;
+  
+  selectedFilesWrap.classList.remove('hidden');
+  sendAction.classList.remove('hidden');
+  fileCount.textContent = selectedFiles.length;
+  filePreviewList.innerHTML = '';
+  
+  selectedFiles.forEach((file, idx) => {
+    const item = document.createElement('div');
+    item.className = 'flex-shrink-0 w-[88px] touch-none select-none relative';
+    item.dataset.idx = idx;
+    const isImg = file.type.startsWith('image/');
+    item.innerHTML = `
+      <div class="aspect-square w-full rounded-2xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex items-center justify-center relative">
+        ${isImg ? `<img class="w-full h-full object-cover pointer-events-none" />` : `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-zinc-400 pointer-events-none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`}
+        <div class="select-check absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#007aff] text-white flex items-center justify-center opacity-0 scale-75 transition">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="airdrop-hint absolute inset-0 bg-[#007aff]/90 text-white text-[10px] font-medium flex items-center justify-center opacity-0 transition pointer-events-none">Giữ</div>
+      </div>
+      <p class="text-[11px] mt-1.5 truncate text-zinc-600 dark:text-zinc-400">${file.name}</p>
+    `;
+    if (isImg) {
+      const img = item.querySelector('img');
+      img.src = URL.createObjectURL(file);
+    }
+    
+    // Selection logic
+    let selectedSet = window._airdropSelected || (window._airdropSelected = new Set());
+    const updateSelectUI = () => {
+      const isSel = selectedSet.has(idx);
+      item.classList.toggle('airdrop-selected', isSel);
+      item.querySelector('.select-check').style.opacity = isSel ? '1' : '0';
+      item.querySelector('.select-check').style.transform = isSel ? 'scale(1)' : 'scale(0.75)';
+    };
+    updateSelectUI();
+    
+    item.addEventListener('click', (e) => {
+      if (e.detail && item.dataset.longpress) { delete item.dataset.longpress; return; }
+      if (selectedSet.has(idx)) selectedSet.delete(idx); else selectedSet.add(idx);
+      updateSelectUI();
+      updateTextSendButton(); updateLinkSendButton();
+    });
+    
+    // Long press to gather
+    let startY = 0, startX = 0, longPress = null, isReady = false;
+    const hint = item.querySelector('.airdrop-hint');
+    
+    const start = (x,y) => {
+      startX = x; startY = y; isReady = false;
+      longPress = setTimeout(() => {
+        if (!selectedPeerId) { showToast('Chọn thiết bị trước'); return; }
+        if (selectedSet.size === 0) selectedSet.add(idx);
+        item.dataset.longpress = '1';
+        isReady = true;
+        triggerGather();
+        if (navigator.vibrate) navigator.vibrate([30,20,30]);
+      }, 550);
+      hint.style.opacity = '0.6';
+    };
+    const cancel = () => { clearTimeout(longPress); hint.style.opacity = '0'; };
+    
+    item.addEventListener('touchstart', e => start(e.touches[0].clientX, e.touches[0].clientY), {passive:true});
+    item.addEventListener('touchend', cancel);
+    item.addEventListener('touchmove', cancel);
+    item.addEventListener('mousedown', e => start(e.clientX, e.clientY));
+    item.addEventListener('mouseup', cancel);
+    item.addEventListener('mouseleave', cancel);
+    
+    filePreviewList.appendChild(item);
+  });
+  
+  updateSendButton();
+}
+
+function clearSelectedFiles() {
+  selectedFiles = [];
+  selectedFilesWrap.classList.add('hidden');
+  sendAction.classList.add('hidden');
+  fileInput.value = '';
+  updateSendButton();
+}
+
+function updateSendButton() {
+  const hasPeer = !!selectedPeerId;
+  const hasFiles = selectedFiles.length > 0;
+  
+  if (!hasFiles) {
+    sendAction.classList.add('hidden');
+    return;
+  }
+  
+  sendAction.classList.remove('hidden');
+  
+  if (hasPeer && hasFiles) {
+    sendBtn.disabled = false;
+    sendBtn.className = 'w-full one-ui-card bg-[#007aff] text-white font-semibold py-4 px-6 flex items-center justify-center gap-2.5 active:scale-[0.99] transition shadow-lg shadow-[#007aff]/20';
+    const peerName = peers.get(selectedPeerId)?.name || 'thiết bị';
+    sendBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span>Gửi ${selectedFiles.length} tệp tới ${peerName}</span>`;
+  } else {
+    sendBtn.disabled = true;
+    sendBtn.className = 'w-full one-ui-card bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 font-semibold py-4 px-6 flex items-center justify-center gap-2.5';
+    sendBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span>Chọn thiết bị để gửi</span>`;
+  }
+}
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+clearFiles.addEventListener('click', clearSelectedFiles);
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('bg-zinc-50','dark:bg-zinc-800/50'); });
+dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('bg-zinc-50','dark:bg-zinc-800/50'); });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('bg-zinc-50','dark:bg-zinc-800/50');
+  if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+
+sendBtn.addEventListener('click', async () => {
+  if (!selectedPeerId || !selectedFiles.length) return;
+  const peerId = selectedPeerId;
+  const filesToSend = [...selectedFiles];
+  clearSelectedFiles();
+  
+  for (const file of filesToSend) {
+    await sendFile(peerId, file);
+  }
+});
+
+async function sendFile(peerId, file) {
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const total = Math.ceil(file.size / CHUNK_SIZE);
+  const peerName = peers.get(peerId)?.name || 'Thiết bị';
+  
+  createTransferCard(id, file.name, file.size, file.type, 'send', peerName, file);
+  sendMeta({id, name: file.name, size: file.size, type: file.type || 'application/octet-stream', total}, peerId);
+  
+  let offset = 0, index = 0;
+  const start = performance.now();
+  
+  while (offset < file.size) {
+    const chunk = file.slice(offset, offset + CHUNK_SIZE);
+    const buf = await chunk.arrayBuffer();
+    const b64 = arrayBufferToBase64(buf);
+    sendChunk({id, index, data: b64}, peerId);
+    offset += CHUNK_SIZE;
+    index++;
+    
+    const percent = Math.min(100, Math.floor((offset / file.size) * 100));
+    const elapsed = (performance.now() - start) / 1000;
+    const speed = offset / Math.max(elapsed, 0.001);
+    updateTransferProgress(id, percent, speed, offset);
+    
+    await new Promise(r => setTimeout(r, 1));
+  }
+  
+  sendDone({id}, peerId);
+  finalizeTransfer(id, 'complete');
+  addHistory({type: 'send', name: file.name, size: file.size, to: peerName, time: Date.now()});
+  showToast('Đã gửi thành công');
+  if (navigator.vibrate) navigator.vibrate([10, 20, 10]);
+}
+
+function createTransferCard(id, name, size, type, direction, peerName, fileObj) {
+  transfersSection.classList.remove('hidden');
+  const isImage = type?.startsWith('image/');
+  const isSend = direction === 'send';
+  
+  const card = document.createElement('div');
+  card.id = `transfer-${id}`;
+  card.className = 'one-ui-card bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4';
+  card.innerHTML = `
+    <div class="flex gap-3.5">
+      <div class="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex-shrink-0 overflow-hidden flex items-center justify-center">
+        ${isImage && isSend && fileObj ? `<img class="w-full h-full object-cover" src="${URL.createObjectURL(fileObj)}" />` : 
+          isImage ? `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="text-zinc-500"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>` :
+          `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="text-zinc-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`
+        }
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <p class="font-medium text-[14px] truncate">${name}</p>
+            <p class="text-[12px] text-zinc-500 dark:text-zinc-400 mt-0.5">${isSend ? 'Gửi tới' : 'Nhận từ'} ${peerName} • ${formatBytes(size)}</p>
+          </div>
+          <span class="text-[11px] px-2 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 whitespace-nowrap" data-status>Đang ${isSend ? 'gửi' : 'nhận'}...</span>
+        </div>
+        <div class="mt-3 h-[6px] w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+          <div class="h-full w-0 bg-[#007aff] transition-all duration-200" data-progress></div>
+        </div>
+        <div class="mt-1.5 flex justify-between text-[11px] text-zinc-500">
+          <span data-percent>0%</span>
+          <span data-speed>0 KB/s</span>
+        </div>
+      </div>
+    </div>
+  `;
+  transfersList.prepend(card);
+}
+
+function updateTransferProgress(id, percent, speed, transferred) {
+  const card = el(`transfer-${id}`);
+  if (!card) return;
+  card.querySelector('[data-progress]').style.width = percent + '%';
+  card.querySelector('[data-percent]').textContent = percent + '%';
+  card.querySelector('[data-speed]').textContent = formatSpeed(speed);
+}
+
+function finalizeTransfer(id, status, url) {
+  const card = el(`transfer-${id}`);
+  if (!card) return;
+  const statusEl = card.querySelector('[data-status]');
+  if (status === 'complete') {
+    statusEl.textContent = 'Hoàn tất';
+    statusEl.className = 'text-[11px] px-2 py-1 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 whitespace-nowrap';
+    card.querySelector('[data-progress]').style.width = '100%';
+    card.querySelector('[data-percent]').textContent = '100%';
+    if (url && card.querySelector('img') === null) {
+      const imgContainer = card.querySelector('.w-14');
+      // optionally replace icon with thumb for received images
+    }
+    setTimeout(() => {
+      card.style.transition = 'opacity 0.4s, transform 0.4s';
+      card.style.opacity = '0.6';
+      card.style.transform = 'scale(0.98)';
+    }, 2000);
+  }
+}
+
+function addHistory(item) {
+  history.unshift(item);
+  emptyHistory.style.display = 'none';
+  historyList.innerHTML = '';
+  
+  history.slice(0, 20).forEach(h => {
+    const isSend = h.type === 'send';
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-3 py-2.5 px-1';
+    row.innerHTML = `
+      <div class="w-9 h-9 rounded-xl ${isSend ? 'bg-[#007aff]/10 text-[#007aff]' : 'bg-green-500/10 text-green-600'} flex items-center justify-center flex-shrink-0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${isSend ? '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>' : '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'}</svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-[14px] truncate leading-snug">${h.name}</p>
+        <p class="text-[12px] text-zinc-500">${isSend ? 'Đã gửi tới' : 'Đã nhận từ'} ${isSend ? h.to : h.from} • ${formatBytes(h.size)}</p>
+      </div>
+      <span class="text-[11px] text-zinc-400">${new Date(h.time).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}</span>
+    `;
+    if (h.url) row.style.cursor = 'pointer', row.onclick = () => window.open(h.url, '_blank');
+    historyList.appendChild(row);
+  });
+}
+
+
+// --- Text & Link Sharing ---
+const openTextShare = el('openTextShare');
+const openLinkShare = el('openLinkShare');
+const textSharePanel = el('textSharePanel');
+const linkSharePanel = el('linkSharePanel');
+const textInput = el('textInput');
+const linkInput = el('linkInput');
+const sendTextBtn = el('sendTextBtn');
+const sendLinkBtn = el('sendLinkBtn');
+const closeTextPanel = el('closeTextPanel');
+const closeLinkPanel = el('closeLinkPanel');
+
+openTextShare.addEventListener('click', () => {
+  textSharePanel.classList.toggle('hidden');
+  linkSharePanel.classList.add('hidden');
+  if (!textSharePanel.classList.contains('hidden')) textInput.focus();
+  updateTextSendButton();
+});
+
+openLinkShare.addEventListener('click', () => {
+  linkSharePanel.classList.toggle('hidden');
+  textSharePanel.classList.add('hidden');
+  if (!linkSharePanel.classList.contains('hidden')) linkInput.focus();
+  updateLinkSendButton();
+});
+
+closeTextPanel.addEventListener('click', () => textSharePanel.classList.add('hidden'));
+closeLinkPanel.addEventListener('click', () => linkSharePanel.classList.add('hidden'));
+
+textInput.addEventListener('input', updateTextSendButton);
+linkInput.addEventListener('input', updateLinkSendButton);
+
+document.querySelectorAll('.quick-link').forEach(btn => {
+  btn.addEventListener('click', () => {
+    linkInput.value = btn.dataset.url;
+    linkInput.focus();
+    updateLinkSendButton();
+  });
+});
+
+function updateTextSendButton() {
+  const hasText = textInput.value.trim().length > 0;
+  const hasPeer = !!selectedPeerId;
+  if (hasText && hasPeer) {
+    sendTextBtn.disabled = false;
+    sendTextBtn.className = 'mt-3 w-full py-3 rounded-xl bg-[#007aff] text-white font-medium text-[14px] active:scale-[0.99] transition';
+    const peerName = peers.get(selectedPeerId)?.name || 'thiết bị';
+    sendTextBtn.textContent = `Gửi văn bản tới ${peerName}`;
+  } else if (hasText) {
+    sendTextBtn.disabled = true;
+    sendTextBtn.className = 'mt-3 w-full py-3 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-medium text-[14px] transition';
+    sendTextBtn.textContent = 'Chọn thiết bị để gửi';
+  } else {
+    sendTextBtn.disabled = true;
+    sendTextBtn.className = 'mt-3 w-full py-3 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-medium text-[14px] transition';
+    sendTextBtn.textContent = 'Nhập văn bản trước';
+  }
+}
+
+function updateLinkSendButton() {
+  const hasLink = linkInput.value.trim().length > 0;
+  const hasPeer = !!selectedPeerId;
+  if (hasLink && hasPeer) {
+    sendLinkBtn.disabled = false;
+    sendLinkBtn.className = 'mt-3 w-full py-3 rounded-xl bg-[#007aff] text-white font-medium text-[14px] active:scale-[0.99] transition';
+    const peerName = peers.get(selectedPeerId)?.name || 'thiết bị';
+    sendLinkBtn.textContent = `Gửi liên kết tới ${peerName}`;
+  } else if (hasLink) {
+    sendLinkBtn.disabled = true;
+    sendLinkBtn.className = 'mt-3 w-full py-3 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-medium text-[14px] transition';
+    sendLinkBtn.textContent = 'Chọn thiết bị để gửi';
+  } else {
+    sendLinkBtn.disabled = true;
+    sendLinkBtn.className = 'mt-3 w-full py-3 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-medium text-[14px] transition';
+    sendLinkBtn.textContent = 'Nhập liên kết trước';
+  }
+}
+
+async function sendTextContent(peerId, text) {
+  const file = new File([text], `van-ban-${new Date().toISOString().slice(11,19).replace(/:/g,'')}.md`, {type: 'text/markdown'});
+  await sendFile(peerId, file);
+}
+
+async function sendLinkContent(peerId, url) {
+  const content = url;
+  const file = new File([content], `link-${new Date().toISOString().slice(11,19).replace(/:/g,'')}.url.txt`, {type: 'text/plain'});
+  // Also send as special meta for instant open
+  const id = Date.now().toString(36);
+  sendMeta({id, name: 'Liên kết', size: content.length, type: 'text/link', total: 1, content}, peerId);
+  createTransferCard(id, url, content.length, 'text/link', 'send', peers.get(peerId)?.name || 'Thiết bị');
+  setTimeout(() => finalizeTransfer(id, 'complete'), 500);
+  addHistory({type: 'send', name: url, size: content.length, to: peers.get(peerId)?.name, time: Date.now()});
+  showToast('Đã gửi liên kết');
+}
+
+sendTextBtn.addEventListener('click', async () => {
+  if (!selectedPeerId || !textInput.value.trim()) return;
+  const text = textInput.value.trim();
+  await sendTextContent(selectedPeerId, text);
+  textInput.value = '';
+  textSharePanel.classList.add('hidden');
+  updateTextSendButton();
+});
+
+sendLinkBtn.addEventListener('click', async () => {
+  if (!selectedPeerId || !linkInput.value.trim()) return;
+  let url = linkInput.value.trim();
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  await sendLinkContent(selectedPeerId, url);
+  linkInput.value = '';
+  linkSharePanel.classList.add('hidden');
+  updateLinkSendButton();
+});
+
+el('refreshBtn').addEventListener('click'
+, () => {
+  showToast('Đang tìm lại thiết bị...');
+  renderPeers();
+});
+
+initDeviceName();
+initNetwork();
+renderPeers();
+</script>
+
+
+<!-- AirDrop Gather Overlay -->
+<div id="airdropOverlay" class="fixed inset-0 z-[90] hidden touch-none" style="touch-action:none; overscroll-behavior:none;">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-2xl transition-opacity"></div>
+  <div id="airdropCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+    <div class="relative">
+      <div class="absolute -inset-5 rounded-[36px] p-[4px] opacity-90"><div class="absolute inset-0 rounded-[36px] airdrop-gradient"></div><div class="absolute inset-[4px] rounded-[32px] bg-black/30 backdrop-blur-2xl"></div></div>
+        <div class="w-full h-full rounded-[29px] bg-black/20 backdrop-blur-xl"></div>
+      </div>
+      <div id="airdropStack" class="relative w-[140px] h-[140px] flex items-center justify-center">
+      </div>
+    </div>
+    <p class="mt-8 text-center text-white/90 text-[15px] font-medium">Đã chọn <span id="airdropCount">0</span> tệp</p>
+    <p class="mt-1 text-center text-white/60 text-[13px]">Vuốt bất kỳ hướng để AirDrop</p>
+  </div>
+</div>
+
+<!-- Custom Action Modal -->
+<div id="actionModal" class="fixed inset-0 z-[100] hidden">
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="modalBackdrop"></div>
+  <div class="absolute bottom-0 left-0 right-0 md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-[420px] w-full">
+    <div class="one-ui-card bg-white dark:bg-zinc-900 border-t md:border border-zinc-200 dark:border-zinc-800 shadow-2xl p-5 mx-3 mb-3 md:mx-0 md:mb-0 animate-in slide-in-from-bottom duration-300">
+      <div class="flex items-start gap-3">
+        <div id="modalIcon" class="w-11 h-11 rounded-2xl bg-[#007aff]/10 flex items-center justify-center flex-shrink-0">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <h3 id="modalTitle" class="text-[17px] font-semibold">Yêu cầu nhận tệp</h3>
+          <p id="modalFrom" class="text-[13px] text-zinc-500 mt-0.5"></p>
+        </div>
+      </div>
+      
+      <div id="modalContent" class="mt-4 p-3.5 bg-zinc-50 dark:bg-zinc-800/70 rounded-2xl max-h-[60vh] overflow-y-auto">
+        <p id="modalFileName" class="font-medium text-[14px] truncate"></p>
+        <p id="modalFileInfo" class="text-[12px] text-zinc-500 mt-1"></p>
+        <div id="modalTextPreview" class="hidden mt-2 text-[14px] whitespace-pre-wrap break-words"></div>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-2.5 mt-5">
+        <button id="modalBtnLeft" class="py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-medium text-[15px] active:scale-[0.98]">Từ chối</button>
+        <button id="modalBtnRight" class="py-3 rounded-xl btn-primary text-white font-medium text-[15px]">Chấp nhận</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Info Screen -->
+<div id="infoScreen" class="fixed inset-0 z-[200] bg-[#f5f5f7] dark:bg-black text-zinc-900 dark:text-white hidden flex flex-col">
+  <div class="flex items-center justify-between px-5 pt-6 pb-4">
+    <button id="infoBack" class="w-9 h-9 flex items-center justify-center -ml-2 active:opacity-60 text-zinc-900 dark:text-white">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <button class="w-9 h-9 flex items-center justify-center opacity-60 text-zinc-500 dark:text-zinc-400">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    </button>
+  </div>
+  
+  <div class="flex-1 flex flex-col items-center px-6">
+    <h1 class="text-[40px] font-semibold tracking-tight mt-16">Tap Share</h1>
+    <div class="mt-8 text-center">
+      <p class="text-[17px] text-zinc-500 dark:text-zinc-400">Phiên bản 1.1.2</p>
+      <p class="text-[17px] text-zinc-500 dark:text-zinc-400 mt-1">Phiên bản mới nhất đã được cài đặt.</p>
+    </div>
+  </div>
+  
+  <div class="pb-12 flex justify-center">
+    <button id="openSourceBtn" class="px-7 py-3.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-[17px] font-medium active:scale-95 transition">Giấy phép nguồn mở</button>
+  </div>
+</div>
+
+</body>
+</html></body></html>  --md-sys-color-surface-container: #F3EDF7;
+  --md-sys-color-surface-container-high: #ECE6F0;
+  --md-sys-color-surface-container-highest: #E6E0E9;
+  --md-sys-color-on-surface: #1C1B1F;
+  --md-sys-color-on-surface-variant: #49454F;
+  --md-sys-color-outline: #79747E;
+  --md-sys-color-outline-variant: #CAC4D0;
+  --md-elevation-1: 0px 1px 2px rgba(0,0,0,0.3), 0px 1px 3px 1px rgba(0,0,0,0.15);
+  --md-elevation-2: 0px 1px 2px rgba(0,0,0,0.3), 0px 2px 6px 2px rgba(0,0,0,0.15);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --md-sys-color-primary: #D0BCFF;
+    --md-sys-color-on-primary: #381E72;
+    --md-sys-color-primary-container: #4F378B;
+    --md-sys-color-on-primary-container: #EADDFF;
+    --md-sys-color-secondary: #CCC2DC;
+    --md-sys-color-secondary-container: #4A4458;
+    --md-sys-color-on-secondary-container: #E8DEF8;
+    --md-sys-color-tertiary: #EFB8C8;
+    --md-sys-color-tertiary-container: #633B48;
+    --md-sys-color-error: #F2B8B5;
+    --md-sys-color-surface: #141218;
+    --md-sys-color-surface-dim: #141218;
+    --md-sys-color-surface-bright: #3B383E;
+    --md-sys-color-surface-container-lowest: #0F0D13;
+    --md-sys-color-surface-container-low: #1D1B20;
+    --md-sys-color-surface-container: #211F26;
+    --md-sys-color-surface-container-high: #2B2930;
+    --md-sys-color-surface-container-highest: #36343B;
+    --md-sys-color-on-surface: #E6E0E9;
+    --md-sys-color-on-surface-variant: #CAC4D0;
+    --md-sys-color-outline: #938F99;
+    --md-sys-color-outline-variant: #49454F;
+  }
+}
+
+body { background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+h1, h2 { font-family: 'Google Sans', 'Roboto', sans-serif; }
+
+.m3-card {
+  background: var(--md-sys-color-surface-container);
+  border-radius: 24px;
+  box-shadow: var(--md-elevation-1);
+  transition: all 0.2s cubic-bezier(.2,0,0,1);
+}
+.m3-card:hover { box-shadow: var(--md-elevation-2); }
+
+.m3-filled-button {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.1px;
+  box-shadow: var(--md-elevation-1);
+}
+.m3-tonal-button {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-weight: 500;
+}
+.m3-outlined-button {
+  border: 1px solid var(--md-sys-color-outline);
+  color: var(--md-sys-color-primary);
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-weight: 500;
+}
+
+.m3-chip {
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.m3-fab {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border-radius: 16px;
+  box-shadow: var(--md-elevation-2);
+  width: 56px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Keep original class names for compatibility */
+.one-ui-card { border-radius: 24px; }
+.one-ui-pill { border-radius: 16px; }
+.btn-primary { background: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; }
+.peer-card-enhanced::before { display: none; }
+.airdrop-gradient { background: conic-gradient(from 0deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary), var(--md-sys-color-secondary), var(--md-sys-color-primary)); }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+@keyframes dropIn { 0% { transform: translateY(-180px) scale(0.6); opacity: 0; } 70% { transform: translateY(12px) scale(1.08); opacity: 1; } 100% { transform: translateY(0) scale(1); } }
+@keyframes flyUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-200px) scale(0.3); opacity: 0; } }
+.drop-anim { animation: dropIn 0.65s cubic-bezier(.2,.8,.2,1); }
 </style>
 <meta name="theme-color" content="#FEF7FF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#141218" media="(prefers-color-scheme: dark)">
